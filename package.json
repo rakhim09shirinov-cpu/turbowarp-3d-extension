@@ -1,0 +1,40 @@
+{
+  "name": "turbowarp-3d-extension",
+  "version": "2.0.0",
+  "description": "Полнофункциональное 3D расширение для TurboWarp с поддержкой загрузки OBJ, GLTF, FBX, COLLADA, STL моделей, физикой, тенями и освещением",
+  "main": "extension.js",
+  "scripts": {
+    "start": "npx http-server",
+    "build": "echo 'No build needed for this project'"
+  },
+  "keywords": [
+    "turbowarp",
+    "scratch",
+    "3d",
+    "three.js",
+    "cannon",
+    "physics",
+    "obj",
+    "gltf",
+    "fbx",
+    "collada",
+    "stl"
+  ],
+  "author": "rakhim09shirinov",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^r128",
+    "cannon-es": "^0.20.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rakhim09shirinov-cpu/turbowarp-3d-extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rakhim09shirinov-cpu/turbowarp-3d-extension/issues"
+  },
+  "homepage": "https://github.com/rakhim09shirinov-cpu/turbowarp-3d-extension#readme"
+}
