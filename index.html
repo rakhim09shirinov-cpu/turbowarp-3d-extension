@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TurboWarp 3D Extension - Демонстрация</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100vh;
+            float: left;
+            background: #1a1a2e;
+            position: relative;
+        }
+
+        #controls {
+            width: 25%;
+            height: 100vh;
+            float: right;
+            background: #0f0f0f;
+            border-left: 2px solid #0099FF;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #0099FF;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #00d4ff;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            border-bottom: 2px solid #0099FF;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            border-left: 3px solid #0099FF;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="color"],
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 4px;
+            background: #2a2a4e;
+            color: #fff;
+            font-family: inherit;
+            border: 1px solid #0099FF;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="color"]:focus {
+            background: #3a3a5e;
+            outline: none;
+            box-shadow: 0 0 8px #0099FF;
+        }
+
+        button {
+            cursor: pointer;
+            background: linear-gradient(135deg, #0099FF 0%, #007ACC 100%);
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #00b8ff 0%, #0088dd 100%);
+            box-shadow: 0 4px 12px rgba(0, 153, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .info-box {
+            background: #1a1a2e;
+            border-left: 3px solid #00ff00;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        .status {
+            font-size: 11px;
+            color: #00d4ff;
+            margin-top: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .success {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .row input {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="controls">
+        <h1>🎮 3D Control</h1>
+
+        <!-- Информация -->
+        <h2>📊 Статус</h2>
+        <div class="status" id="status">⏳ Загрузка...</div>
+
+        <!-- Загрузка моделей -->
+        <h2>📦 Загрузить модель</h2>
+        <div class="control-group">
+            <label>URL модели:</label>
+            <input type="text" id="modelUrl" placeholder="https://example.com/model.glb" 
+                   value="https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf">
+            <label>Имя модели:</label>
+            <input type="text" id="modelName" placeholder="model1" value="duck">
+            <button onclick="loadModelFromUrl()">📥 Загрузить модель</button>
+        </div>
+
+        <!-- Быстрые форматы -->
+        <div class="control-group">
+            <label>Быстрая загрузка:</label>
+            <button onclick="loadDuck()">🦆 Загрузить утку</button>
+            <button onclick="createCube()">⬜ Создать куб</button>
+            <button onclick="createSphere()">⚪ Создать сферу</button>
+        </div>
+
+        <!-- Управление позицией -->
+        <h2>📍 Позиция</h2>
+        <div class="control-group">
+            <label>Имя объекта:</label>
+            <input type="text" id="selectedModel" placeholder="duck" value="duck">
+            <div class="row">
+                <div>
+                    <label>X:</label>
+                    <input type="number" id="posX" value="0">
+                </div>
+                <div>
+                    <label>Y:</label>
+                    <input type="number" id="posY" value="0">
+                </div>
+            </div>
+            <label>Z:</label>
+            <input type="number" id="posZ" value="0">
+            <button onclick="setPosition()">✅ Установить позицию</button>
+        </div>
+
+        <!-- Масштаб и вращение -->
+        <h2>📐 Трансформация</h2>
+        <div class="control-group">
+            <div class="row">
+                <div>
+                    <label>Масштаб X:</label>
+                    <input type="number" id="scaleX" value="1" step="0.1">
+                </div>
+                <div>
+                    <label>Y:</label>
+                    <input type="number" id="scaleY" value="1" step="0.1">
+                </div>
+            </div>
+            <label>Z:</label>
+            <input type="number" id="scaleZ" value="1" step="0.1">
+            <button onclick="setScale()">📏 Установить масштаб</button>
+        </div>
+
+        <!-- Физика -->
+        <h2>⚡ Физика</h2>
+        <div class="control-group">
+            <label>Сила X:</label>
+            <input type="number" id="forceX" value="0">
+            <label>Сила Y:</label>
+            <input type="number" id="forceY" value="100">
+            <label>Сила Z:</label>
+            <input type="number" id="forceZ" value="0">
+            <button onclick="applyForce()">💥 Применить силу</button>
+        </div>
+
+        <!-- Материалы -->
+        <h2>🎨 Материал</h2>
+        <div class="control-group">
+            <label>Цвет:</label>
+            <input type="color" id="color" value="#ff0000">
+            <label>Металличность (0-1):</label>
+            <input type="number" id="metalness" value="0.5" min="0" max="1" step="0.1">
+            <label>Шершавость (0-1):</label>
+            <input type="number" id="roughness" value="0.5" min="0" max="1" step="0.1">
+            <button onclick="setMaterial()">🎨 Применить материал</button>
+        </div>
+
+        <!-- Управление -->
+        <h2>🔧 Управление</h2>
+        <div class="control-group">
+            <button onclick="removeModel()">🗑️ Удалить объект</button>
+            <button onclick="clearScene()">🧹 Очистить сцену</button>
+            <button onclick="resetCamera()">📷 Сбросить камеру</button>
+        </div>
+
+        <!-- Советы -->
+        <h2>💡 Советы</h2>
+        <div class="info-box">
+            ✅ Колесо мыши - масштабирование<br>
+            ✅ ПКМ + движение - вращение камеры<br>
+            ✅ Все модели поддерживают физику<br>
+            ✅ Модели отбрасывают тени
+        </div>
+    </div>
+
+    <!-- Загрузка библиотек -->
+    <script src="https://cdn.jsdelivr.net/npm/three@r128/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"></script>
+
+    <!-- Основное расширение -->
+    <script src="extension.js"></script>
+
+    <script>
+        let turbowarp3d = null;
+
+        // Инициализация
+        async function init() {
+            try {
+                const container = document.getElementById('canvas-container');
+                turbowarp3d = new Turbowarp3D();
+                await turbowarp3d.init(
+                    '#canvas-container',
+                    container.clientWidth,
+                    container.clientHeight
+                );
+
+                updateStatus('✅ 3D сцена готова!', 'success');
+            } catch (error) {
+                console.error('Ошибка инициализации:', error);
+                updateStatus('❌ Ошибка инициализации', 'error');
+            }
+        }
+
+        // Загрузить утку
+        async function loadDuck() {
+            try {
+                updateStatus('⏳ Загрузка утки...', '');
+                const url = 'https://threejs.org/examples/models/gltf/Duck/glTF/Duck.gltf';
+                await turbowarp3d.loadGLTF(url, 'duck');
+                turbowarp3d.setModelPosition('duck', 0, 5, 0);
+                updateStatus('✅ Утка загружена!', 'success');
+                document.getElementById('selectedModel').value = 'duck';
+            } catch (error) {
+                updateStatus('❌ Ошибка загрузки', 'error');
+                console.error(error);
+            }
+        }
+
+        // Создать куб
+        function createCube() {
+            const geometry = new THREE.BoxGeometry(2, 2, 2);
+            const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(Math.random() * 10 - 5, 5, Math.random() * 10 - 5);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+
+            turbowarp3d.scene.add(cube);
+            turbowarp3d.models.set('cube', cube);
+            turbowarp3d.addPhysicsToModel('cube', cube);
+
+            updateStatus('✅ Куб создан!', 'success');
+            document.getElementById('selectedModel').value = 'cube';
+        }
+
+        // Создать сферу
+        function createSphere() {
+            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+            const sphere = new THREE.Mesh(geometry, material);
+            sphere.position.set(Math.random() * 10 - 5, 5, Math.random() * 10 - 5);
+            sphere.castShadow = true;
+            sphere.receiveShadow = true;
+
+            turbowarp3d.scene.add(sphere);
+            turbowarp3d.models.set('sphere', sphere);
+            turbowarp3d.addPhysicsToModel('sphere', sphere);
+
+            updateStatus('✅ Сфера создана!', 'success');
+            document.getElementById('selectedModel').value = 'sphere';
+        }
+
+        // Загрузить модель с URL
+        async function loadModelFromUrl() {
+            try {
+                const url = document.getElementById('modelUrl').value;
+                const name = document.getElementById('modelName').value;
+
+                if (!url) {
+                    updateStatus('❌ Укажите URL', 'error');
+                    return;
+                }
+
+                updateStatus('⏳ Загрузка модели...', '');
+                await turbowarp3d.loadModel(url, name);
+                updateStatus('✅ Модель загружена!', 'success');
+                document.getElementById('selectedModel').value = name;
+            } catch (error) {
+                updateStatus('❌ Ошибка загрузки', 'error');
+                console.error(error);
+            }
+        }
+
+        // Установить позицию
+        function setPosition() {
+            const name = document.getElementById('selectedModel').value;
+            const x = parseFloat(document.getElementById('posX').value);
+            const y = parseFloat(document.getElementById('posY').value);
+            const z = parseFloat(document.getElementById('posZ').value);
+
+            turbowarp3d.setModelPosition(name, x, y, z);
+            updateStatus('✅ Позиция установлена', 'success');
+        }
+
+        // Установить масштаб
+        function setScale() {
+            const name = document.getElementById('selectedModel').value;
+            const x = parseFloat(document.getElementById('scaleX').value);
+            const y = parseFloat(document.getElementById('scaleY').value);
+            const z = parseFloat(document.getElementById('scaleZ').value);
+
+            turbowarp3d.setModelScale(name, x, y, z);
+            updateStatus('✅ Масштаб установлен', 'success');
+        }
+
+        // Применить силу
+        function applyForce() {
+            const name = document.getElementById('selectedModel').value;
+            const x = parseFloat(document.getElementById('forceX').value);
+            const y = parseFloat(document.getElementById('forceY').value);
+            const z = parseFloat(document.getElementById('forceZ').value);
+
+            turbowarp3d.applyForceToModel(name, x, y, z);
+            updateStatus('✅ Сила применена', 'success');
+        }
+
+        // Установить материал
+        function setMaterial() {
+            const name = document.getElementById('selectedModel').value;
+            const color = document.getElementById('color').value;
+            const metalness = parseFloat(document.getElementById('metalness').value);
+            const roughness = parseFloat(document.getElementById('roughness').value);
+
+            turbowarp3d.setModelMaterial(name, color, metalness, roughness);
+            updateStatus('✅ Материал применен', 'success');
+        }
+
+        // Удалить модель
+        function removeModel() {
+            const name = document.getElementById('selectedModel').value;
+            turbowarp3d.removeModel(name);
+            updateStatus('✅ Объект удален', 'success');
+        }
+
+        // Очистить сцену
+        function clearScene() {
+            turbowarp3d.models.forEach((_, name) => {
+                turbowarp3d.removeModel(name);
+            });
+            updateStatus('✅ Сцена очищена', 'success');
+        }
+
+        // Сбросить камеру
+        function resetCamera() {
+            turbowarp3d.camera.position.set(0, 8, 15);
+            turbowarp3d.camera.lookAt(0, 0, 0);
+            updateStatus('✅ Камера сброшена', 'success');
+        }
+
+        // Обновить статус
+        function updateStatus(message, className) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + className;
+        }
+
+        // Инициализировать при загрузке страницы
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
